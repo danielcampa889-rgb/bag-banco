@@ -178,6 +178,17 @@
             </div>
         </div>
     </section>
+  <div class="bg-white p-8 rounded-3xl mt-10">
+    <h3 class="font-black mb-4">Solicitar Información</h3>
+
+    <input id="f-nombre" placeholder="Nombre" class="w-full p-3 mb-2 border">
+    <input id="f-correo" placeholder="Correo" class="w-full p-3 mb-2 border">
+    <textarea id="f-mensaje" placeholder="Mensaje" class="w-full p-3 mb-2 border"></textarea>
+
+    <button onclick="enviarSolicitud()" class="bg-green-800 text-white px-5 py-2 rounded">
+        Enviar
+    </button>
+</div>
 
     <!-- VISTA: PORTAL DE CLIENTE (Solo visible logueado) -->
     <section id="view-portal" class="section-view p-6 py-12">
@@ -320,14 +331,125 @@
 
     <!-- FIREBASE & LOGIC -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "bag-banco.firebaseapp.com",
+  projectId: "bag-banco",
+  storageBucket: "bag-banco.appspot.com",
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// colecciones
+const usersRef = collection(db, "usuarios");
+const mensajesRef = collection(db, "mensajes");
+
+// ===== REGISTRO =====
+window.doRegister = async () => {
+    const n = document.getElementById('r-name').value;
+    const u = document.getElementById('r-user').value.toLowerCase();
+    const p = document.getElementById('r-pass').value;
+
+    if(!n || !u || !p) return alert("Completa todos los campos");
+
+    const q = query(usersRef, where("user", "==", u));
+    const snap = await getDocs(q);
+
+    if(!snap.empty) return alert("Usuario ya existe");
+
+    await addDoc(usersRef, {
+        name: n,
+        user: u,
+        pass: p,
+        role: u === "admin" ? "admin" : "cliente"
+    });
+
+    alert("Cuenta creada");
+};
+
+// ===== LOGIN =====
+window.doLogin = async () => {
+    const u = document.getElementById('l-user').value.toLowerCase();
+    const p = document.getElementById('l-pass').value;
+
+    const q = query(usersRef, where("user", "==", u), where("pass", "==", p));
+    const snap = await getDocs(q);
+
+    if(snap.empty) return alert("Datos incorrectos");
+
+    const user = snap.docs[0].data();
+
+    localStorage.setItem("bag_user", JSON.stringify(user));
+
+    applyLogin(user);
+
+    if(user.role === "admin"){
+        cargarMensajes();
+    }
+};
+
+// ===== LOGIN UI =====
+window.applyLogin = (user) => {
+    document.body.classList.replace('is-guest', 'is-logged-in');
+    document.getElementById('user-display').classList.remove('hidden');
+    document.getElementById('user-name-tag').innerText = user.name;
+};
+
+// ===== LOGOUT =====
+window.logout = () => {
+    localStorage.removeItem("bag_user");
+    location.reload();
+};
+
+// ===== FORMULARIO =====
+window.enviarSolicitud = async () => {
+    const nombre = document.getElementById("f-nombre").value;
+    const correo = document.getElementById("f-correo").value;
+    const mensaje = document.getElementById("f-mensaje").value;
+
+    if(!nombre || !correo || !mensaje) return alert("Llena todo");
+
+    await addDoc(mensajesRef, {
+        nombre,
+        correo,
+        mensaje,
+        fecha: new Date()
+    });
+
+    alert("Solicitud enviada");
+};
+
+// ===== ADMIN MENSAJES =====
+window.cargarMensajes = async () => {
+    const cont = document.getElementById("admin-mensajes");
+    cont.innerHTML = "";
+
+    const snap = await getDocs(mensajesRef);
+
+    snap.forEach(doc => {
+        const d = doc.data();
+
+        cont.innerHTML += `
+        <div id="admin-mensajes" class="mt-6"></div>
+            <p><b>${d.nombre}</b> (${d.correo})</p>
+            <p>${d.mensaje}</p>
+        </div>`;
+    });
+};
+<script>
         // Configuración de Firebase (Se conectará a tu entorno al subirlo)
-        const firebaseConfig = { apiKey: "", authDomain: "bag-banco.firebaseapp.com", projectId: "bag-banco", storageBucket: "bag-banco.appspot.com" };
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
+        const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "bag-banco.firebaseapp.com",
+  projectId: "bag-banco",
+  storageBucket: "bag-banco.firebasestorage.app",
+  messagingSenderId: "611219441748",
+  appId: "1:611219441748:web:..."
+};
         // Referencias Globales
         window.db = db;
         window.collUsers = collection(db, "usuarios_bag");
