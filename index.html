@@ -317,7 +317,7 @@
             <button onclick="toggleModal('modal-auth')" class="absolute top-6 right-6 text-gray-300 hover:text-red-600 transition"><i class="fas fa-times-circle text-2xl"></i></button>
         </div>
     </div>
-
+<script>
     <!-- FIREBASE & LOGIC -->
    <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
@@ -385,29 +385,18 @@ window.doLogin = async function() {
         alert("Datos incorrectos");
     }
 };
-
-// =========================
-// LOGIN VISUAL
-// =========================
 window.applyLogin = function(user) {
     document.body.classList.replace('is-guest', 'is-logged-in');
     document.getElementById('auth-status-text').innerText = "Modo: Cliente Verificado";
     document.getElementById('user-display').classList.remove('hidden');
     document.getElementById('user-name-tag').innerText = user.name;
 };
-
-// =========================
-// LOGOUT
-// =========================
 window.logout = function() {
     document.body.classList.replace('is-logged-in', 'is-guest');
     document.getElementById('auth-status-text').innerText = "Modo: Consulta Pública";
     document.getElementById('user-display').classList.add('hidden');
 };
 
-// =========================
-// UI
-// =========================
 window.toggleModal = function(id){
     document.getElementById(id).classList.toggle('hidden');
 }
@@ -428,6 +417,6 @@ window.toggleAuth = function(isReg){
   </button>
 </div>
       <div id="admin-mensajes" class="mt-10"></div>
-  
+  <script>
 </body>
 </html>
