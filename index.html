@@ -1,4 +1,4 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -90,10 +90,9 @@
     <header class="bg-white/90 backdrop-blur-xl sticky top-0 z-[1000] border-b border-gray-200 px-6 py-4">
         <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-6">
             <div class="flex items-center gap-4">
-               <div class="logo-container">
-    <img id="logo-img" src="./logo.png" class="w-full h-full object-cover">
-</div>
-                </div>
+                <div class="logo-container">
+                <img id="logo-img" src="./logo.png" class="w-full h-full object-cover">
+             </div>
                 <div>
                     <h1 class="text-xl md:text-2xl font-black text-emerald-950 uppercase italic tracking-tighter">Banco Agropecuario Guatemalteco (BAG)</h1>
                     <p class="text-[10px] font-bold text-red-700 uppercase italic tracking-[3px]">“Creciendo contigo, desde la tierra”</p>
@@ -317,106 +316,132 @@
             <button onclick="toggleModal('modal-auth')" class="absolute top-6 right-6 text-gray-300 hover:text-red-600 transition"><i class="fas fa-times-circle text-2xl"></i></button>
         </div>
     </div>
-<script>
+
     <!-- FIREBASE & LOGIC -->
-   <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-// CONFIG FIREBASE (YA CASI LISTO)
-const firebaseConfig = {
-  apiKey: "AIzaSy...",
-  authDomain: "bag-banco.firebaseapp.com",
-  projectId: "bag-banco",
-  storageBucket: "bag-banco.appspot.com",
-  messagingSenderId: "611219441748",
-  appId: "1:611219441748:web:6d550e0031d575a13c85c1"
-};
+        // Configuración de Firebase (Se conectará a tu entorno al subirlo)
+        const firebaseConfig = { apiKey: "", authDomain: "bag-banco.firebaseapp.com", projectId: "bag-banco", storageBucket: "bag-banco.appspot.com" };
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+        // Referencias Globales
+        window.db = db;
+        window.collUsers = collection(db, "usuarios_bag");
+    </script>
 
-// =========================
-// REGISTRO (GUARDA EN FIREBASE)
-// =========================
-window.doRegister = async function() {
-    const n = document.getElementById('r-name').value;
-    const u = document.getElementById('r-user').value.toLowerCase();
-    const p = document.getElementById('r-pass').value;
+    <script>
+        const services = [
+            { t: "Préstamos Agrícolas", b: "Post-Cosecha", d: "El agricultor pide un préstamo al inicio, pagando hasta después de vender su cosecha." },
+            { t: "Crédito Herramientas", b: "Maquinaria", d: "Financiamos tractores, bombas de agua y fertilizantes de alta calidad." },
+            { t: "Seguro de Cosecha", b: "Protección", d: "El banco te compensa si hay sequías o plagas que dañen tu producción." },
+            { t: "Asesoría Técnica", b: "Gratuito", d: "Capacitación técnica para aprender mejores formas de sembrar." },
+            { t: "Banca Móvil Rural", b: "Tecnología", d: "Consulta saldos y paga préstamos desde tu celular en el campo." },
+            { t: "Créditos Verdes", b: "Sostenibilidad", d: "Intereses más bajos si implementas riego eficiente o energía solar." },
+            { t: "Microcréditos Mujer", b: "Apoyo", d: "Financiamiento para proyectos liderados por mujeres rurales." },
+            { t: "Adelanto de Efectivo", b: "Liquidez", d: "Recibe el pago de tu venta hoy mismo sin esperar al comprador." }
+        ];
 
-    if(!n || !u || !p) return alert("Completa todos los campos");
+        window.onload = () => {
+            const grid = document.getElementById('services-grid');
+            grid.innerHTML = services.map(s => `
+                <div class="bg-white p-8 rounded-[40px] shadow-lg border-b-8 border-yellow-500 hover:scale-105 transition-transform duration-300">
+                    <h4 class="font-black text-emerald-900 uppercase italic text-sm mb-1">${s.t}</h4>
+                    <span class="text-red-700 font-black text-[9px] uppercase italic mb-4 tracking-widest inline-block">${s.b}</span>
+                    <p class="text-xs text-gray-500 italic mb-6 font-medium">${s.d}</p>
+                    <button class="w-full bg-emerald-950 text-white font-black py-4 rounded-2xl text-[9px] uppercase tracking-widest hover:bg-yellow-500 hover:text-black transition">Solicitar Info</button>
+                </div>
+            `).join('');
+            
+            // Cargar usuario si existe en localStorage para esta sesión
+            const saved = localStorage.getItem('bag_user');
+            if(saved) applyLogin(JSON.parse(saved));
+        };
 
-    try {
-        await addDoc(collection(db, "usuarios"), {
-            name: n,
-            user: u,
-            pass: p,
-            date: new Date()
-        });
-
-        alert("Cuenta creada en la nube 🚀");
-    } catch (e) {
-        alert("Error: " + e);
-    }
-};
-
-// =========================
-// LOGIN (CONSULTA FIREBASE)
-// =========================
-window.doLogin = async function() {
-    const u = document.getElementById('l-user').value.toLowerCase();
-    const p = document.getElementById('l-pass').value;
-
-    const q = query(collection(db, "usuarios"), where("user", "==", u));
-    const querySnapshot = await getDocs(q);
-
-    let found = null;
-
-    querySnapshot.forEach((doc) => {
-        if(doc.data().pass === p){
-            found = doc.data();
+        function showView(id) {
+            document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+            document.getElementById('view-' + id).classList.add('active');
+            document.getElementById('nav-' + id).classList.add('active');
+            window.scrollTo(0,0);
         }
-    });
 
-    if(found){
-        applyLogin(found);
-        alert("Bienvenido 🔥");
-    } else {
-        alert("Datos incorrectos");
-    }
-};
-window.applyLogin = function(user) {
-    document.body.classList.replace('is-guest', 'is-logged-in');
-    document.getElementById('auth-status-text').innerText = "Modo: Cliente Verificado";
-    document.getElementById('user-display').classList.remove('hidden');
-    document.getElementById('user-name-tag').innerText = user.name;
-};
-window.logout = function() {
-    document.body.classList.replace('is-logged-in', 'is-guest');
-    document.getElementById('auth-status-text').innerText = "Modo: Consulta Pública";
-    document.getElementById('user-display').classList.add('hidden');
-};
+        async function doRegister() {
+            const btn = document.getElementById('btn-reg');
+            const n = document.getElementById('r-name').value;
+            const u = document.getElementById('r-user').value.toLowerCase();
+            const p = document.getElementById('r-pass').value;
 
-window.toggleModal = function(id){
-    document.getElementById(id).classList.toggle('hidden');
-}
+            if(!n || !u || !p) return alert("Por favor complete todos los datos del formulario.");
+            
+            btn.innerText = "PROCESANDO...";
+            btn.disabled = true;
 
-window.toggleAuth = function(isReg){
-    document.getElementById('auth-login').classList.toggle('hidden', isReg);
-    document.getElementById('auth-reg').classList.toggle('hidden', !isReg);
-}
-      <div class="p-6 bg-white rounded-2xl shadow">
-  <h3 class="font-black mb-4">Solicitar Información</h3>
+            try {
+                // Simulación de guardado en DB (En un despliegue real usaríamos Firebase)
+                const newUser = { name: n, user: u, pass: p, date: new Date().toISOString() };
+                
+                // Persistencia local para el sitio estático compartido
+                let localUsers = JSON.parse(localStorage.getItem('bag_db') || '[]');
+                if(localUsers.find(x => x.user === u)) {
+                    alert("Este usuario ya está registrado.");
+                } else {
+                    localUsers.push(newUser);
+                    localStorage.setItem('bag_db', JSON.stringify(localUsers));
+                    alert("¡Bienvenido a BAG! Su cuenta ha sido creada exitosamente.");
+                    toggleAuth(false);
+                }
+            } catch (e) { alert("Error al conectar con la base de datos."); }
+            finally { btn.innerText = "CREAR MI CUENTA"; btn.disabled = false; }
+        }
 
-  <input id="f-nombre" placeholder="Nombre" class="w-full mb-2 p-3 border rounded">
-  <input id="f-correo" placeholder="Correo" class="w-full mb-2 p-3 border rounded">
-  <textarea id="f-mensaje" placeholder="Mensaje" class="w-full mb-2 p-3 border rounded"></textarea>
+        function doLogin() {
+            const u = document.getElementById('l-user').value.toLowerCase();
+            const p = document.getElementById('l-pass').value;
+            
+            let localUsers = JSON.parse(localStorage.getItem('bag_db') || '[]');
+            const found = localUsers.find(x => x.user === u && x.pass === p);
 
-  <button onclick="enviarMensaje()" class="bg-emerald-900 text-white px-6 py-2 rounded">
-    Enviar
-  </button>
-</div>
-      <div id="admin-mensajes" class="mt-10"></div>
-  <script>
+            if(found) {
+                applyLogin(found);
+                localStorage.setItem('bag_user', JSON.stringify(found));
+                toggleModal('modal-auth');
+                showView('portal');
+            } else {
+                alert("Usuario o contraseña incorrectos. Verifique sus credenciales.");
+            }
+        }
+
+        function applyLogin(user) {
+            document.body.classList.replace('is-guest', 'is-logged-in');
+            document.getElementById('auth-status-text').innerText = "Modo: Cliente Verificado";
+            document.getElementById('user-display').classList.remove('hidden');
+            document.getElementById('user-name-tag').innerText = user.name;
+        }
+
+        function logout() {
+            localStorage.removeItem('bag_user');
+            document.body.classList.replace('is-logged-in', 'is-guest');
+            document.getElementById('auth-status-text').innerText = "Modo: Consulta Pública";
+            document.getElementById('user-display').classList.add('hidden');
+            showView('inicio');
+        }
+
+        function loadLogo(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (e) => document.getElementById('logo-img').src = e.target.result;
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+        function toggleAuth(isReg) {
+            document.getElementById('auth-login').classList.toggle('hidden', isReg);
+            document.getElementById('auth-reg').classList.toggle('hidden', !isReg);
+        }
+    </script>
 </body>
 </html>
