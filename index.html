@@ -319,15 +319,13 @@
     </div>
 
     <!-- FIREBASE & LOGIC -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+   <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
-        // Configuración de Firebase (Se conectará a tu entorno al subirlo)
-     
-// CONFIG FIREBASE
+// CONFIG FIREBASE (YA CASI LISTO)
 const firebaseConfig = {
-  apiKey: "TU_API_KEY",
+  apiKey: "AIzaSy...",
   authDomain: "bag-banco.firebaseapp.com",
   projectId: "bag-banco",
   storageBucket: "bag-banco.appspot.com",
@@ -338,96 +336,87 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// =====================
-// 🔐 REGISTRO
-// =====================
-window.doRegister = async () => {
-  const n = document.getElementById('r-name').value;
-  const u = document.getElementById('r-user').value.toLowerCase();
-  const p = document.getElementById('r-pass').value;
+// =========================
+// REGISTRO (GUARDA EN FIREBASE)
+// =========================
+window.doRegister = async function() {
+    const n = document.getElementById('r-name').value;
+    const u = document.getElementById('r-user').value.toLowerCase();
+    const p = document.getElementById('r-pass').value;
 
-  if(!n || !u || !p) return alert("Completa todos los campos");
+    if(!n || !u || !p) return alert("Completa todos los campos");
 
-  try {
-    await addDoc(collection(db, "usuarios"), {
-      nombre: n,
-      usuario: u,
-      pass: p,
-      rol: "cliente"
+    try {
+        await addDoc(collection(db, "usuarios"), {
+            name: n,
+            user: u,
+            pass: p,
+            date: new Date()
+        });
+
+        alert("Cuenta creada en la nube 🚀");
+    } catch (e) {
+        alert("Error: " + e);
+    }
+};
+
+// =========================
+// LOGIN (CONSULTA FIREBASE)
+// =========================
+window.doLogin = async function() {
+    const u = document.getElementById('l-user').value.toLowerCase();
+    const p = document.getElementById('l-pass').value;
+
+    const q = query(collection(db, "usuarios"), where("user", "==", u));
+    const querySnapshot = await getDocs(q);
+
+    let found = null;
+
+    querySnapshot.forEach((doc) => {
+        if(doc.data().pass === p){
+            found = doc.data();
+        }
     });
 
-    alert("Cuenta creada 🔥");
-  } catch(e) {
-    alert("Error al registrar");
-  }
-};
-
-// =====================
-// 🔑 LOGIN
-// =====================
-window.doLogin = async () => {
-  const u = document.getElementById('l-user').value.toLowerCase();
-  const p = document.getElementById('l-pass').value;
-
-  const q = query(collection(db, "usuarios"), where("usuario","==",u), where("pass","==",p));
-  const snap = await getDocs(q);
-
-  if(!snap.empty){
-    const data = snap.docs[0].data();
-    localStorage.setItem("user", JSON.stringify(data));
-
-    alert("Bienvenido " + data.nombre);
-
-    if(data.rol === "admin"){
-      cargarMensajes();
+    if(found){
+        applyLogin(found);
+        alert("Bienvenido 🔥");
+    } else {
+        alert("Datos incorrectos");
     }
-
-  } else {
-    alert("Datos incorrectos");
-  }
 };
 
-// =====================
-// 📩 FORMULARIO
-// =====================
-window.enviarMensaje = async () => {
-  const nombre = document.getElementById("f-nombre").value;
-  const correo = document.getElementById("f-correo").value;
-  const mensaje = document.getElementById("f-mensaje").value;
-
-  if(!nombre || !correo || !mensaje) return alert("Llena todo");
-
-  await addDoc(collection(db, "mensajes"), {
-    nombre,
-    correo,
-    mensaje,
-    fecha: new Date()
-  });
-
-  alert("Mensaje enviado 🚀");
+// =========================
+// LOGIN VISUAL
+// =========================
+window.applyLogin = function(user) {
+    document.body.classList.replace('is-guest', 'is-logged-in');
+    document.getElementById('auth-status-text').innerText = "Modo: Cliente Verificado";
+    document.getElementById('user-display').classList.remove('hidden');
+    document.getElementById('user-name-tag').innerText = user.name;
 };
 
-// =====================
-// 🧠 ADMIN PANEL
-// =====================
-window.cargarMensajes = async () => {
-  const cont = document.getElementById("admin-mensajes");
-  if(!cont) return;
-
-  const snap = await getDocs(collection(db, "mensajes"));
-
-  cont.innerHTML = "";
-
-  snap.forEach(doc => {
-    const d = doc.data();
-    cont.innerHTML += `
-      <div class="bg-white p-4 rounded-xl shadow mb-3">
-        <p><b>${d.nombre}</b> (${d.correo})</p>
-        <p>${d.mensaje}</p>
-      </div>
-    `;
-  });
+// =========================
+// LOGOUT
+// =========================
+window.logout = function() {
+    document.body.classList.replace('is-logged-in', 'is-guest');
+    document.getElementById('auth-status-text').innerText = "Modo: Consulta Pública";
+    document.getElementById('user-display').classList.add('hidden');
 };
+
+// =========================
+// UI
+// =========================
+window.toggleModal = function(id){
+    document.getElementById(id).classList.toggle('hidden');
+}
+
+window.toggleAuth = function(isReg){
+    document.getElementById('auth-login').classList.toggle('hidden', isReg);
+    document.getElementById('auth-reg').classList.toggle('hidden', !isReg);
+}
+</script>
       <div class="p-6 bg-white rounded-2xl shadow">
   <h3 class="font-black mb-4">Solicitar Información</h3>
 
