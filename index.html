@@ -324,7 +324,14 @@
         import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
 
         // Configuración de Firebase (Se conectará a tu entorno al subirlo)
-        const firebaseConfig = { apiKey: "", authDomain: "bag-banco.firebaseapp.com", projectId: "bag-banco", storageBucket: "bag-banco.appspot.com" };
+       const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "bag-banco.firebaseapp.com",
+  projectId: "bag-banco",
+  storageBucket: "bag-banco.appspot.com",
+  messagingSenderId: "611219441748",
+  appId: "1:611219441748:web:6d550e0031d575a13c85c1"
+};
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
@@ -436,6 +443,126 @@
             document.getElementById('auth-login').classList.toggle('hidden', isReg);
             document.getElementById('auth-reg').classList.toggle('hidden', !isReg);
         }
-    </script>
+    <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+// CONFIG FIREBASE
+const firebaseConfig = {
+  apiKey: "TU_API_KEY",
+  authDomain: "bag-banco.firebaseapp.com",
+  projectId: "bag-banco",
+  storageBucket: "bag-banco.appspot.com",
+  messagingSenderId: "611219441748",
+  appId: "1:611219441748:web:6d550e0031d575a13c85c1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// =====================
+// 🔐 REGISTRO
+// =====================
+window.doRegister = async () => {
+  const n = document.getElementById('r-name').value;
+  const u = document.getElementById('r-user').value.toLowerCase();
+  const p = document.getElementById('r-pass').value;
+
+  if(!n || !u || !p) return alert("Completa todos los campos");
+
+  try {
+    await addDoc(collection(db, "usuarios"), {
+      nombre: n,
+      usuario: u,
+      pass: p,
+      rol: "cliente"
+    });
+
+    alert("Cuenta creada 🔥");
+  } catch(e) {
+    alert("Error al registrar");
+  }
+};
+
+// =====================
+// 🔑 LOGIN
+// =====================
+window.doLogin = async () => {
+  const u = document.getElementById('l-user').value.toLowerCase();
+  const p = document.getElementById('l-pass').value;
+
+  const q = query(collection(db, "usuarios"), where("usuario","==",u), where("pass","==",p));
+  const snap = await getDocs(q);
+
+  if(!snap.empty){
+    const data = snap.docs[0].data();
+    localStorage.setItem("user", JSON.stringify(data));
+
+    alert("Bienvenido " + data.nombre);
+
+    if(data.rol === "admin"){
+      cargarMensajes();
+    }
+
+  } else {
+    alert("Datos incorrectos");
+  }
+};
+
+// =====================
+// 📩 FORMULARIO
+// =====================
+window.enviarMensaje = async () => {
+  const nombre = document.getElementById("f-nombre").value;
+  const correo = document.getElementById("f-correo").value;
+  const mensaje = document.getElementById("f-mensaje").value;
+
+  if(!nombre || !correo || !mensaje) return alert("Llena todo");
+
+  await addDoc(collection(db, "mensajes"), {
+    nombre,
+    correo,
+    mensaje,
+    fecha: new Date()
+  });
+
+  alert("Mensaje enviado 🚀");
+};
+
+// =====================
+// 🧠 ADMIN PANEL
+// =====================
+window.cargarMensajes = async () => {
+  const cont = document.getElementById("admin-mensajes");
+  if(!cont) return;
+
+  const snap = await getDocs(collection(db, "mensajes"));
+
+  cont.innerHTML = "";
+
+  snap.forEach(doc => {
+    const d = doc.data();
+    cont.innerHTML += `
+      <div class="bg-white p-4 rounded-xl shadow mb-3">
+        <p><b>${d.nombre}</b> (${d.correo})</p>
+        <p>${d.mensaje}</p>
+      </div>
+    `;
+  });
+};
+      <div class="p-6 bg-white rounded-2xl shadow">
+  <h3 class="font-black mb-4">Solicitar Información</h3>
+
+  <input id="f-nombre" placeholder="Nombre" class="w-full mb-2 p-3 border rounded">
+  <input id="f-correo" placeholder="Correo" class="w-full mb-2 p-3 border rounded">
+  <textarea id="f-mensaje" placeholder="Mensaje" class="w-full mb-2 p-3 border rounded"></textarea>
+
+  <button onclick="enviarMensaje()" class="bg-emerald-900 text-white px-6 py-2 rounded">
+    Enviar
+  </button>
+</div>
+      <div id="admin-mensajes" class="mt-10"></div>
+</script>
+  
 </body>
 </html>
